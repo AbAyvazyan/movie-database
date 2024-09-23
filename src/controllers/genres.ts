@@ -1,11 +1,11 @@
 import { Request, Response } from 'express';
-import {pool} from "../utils/dbUtils";
+import * as genreService from '../services/genresService';
 
 export const getGenres = async (req: Request, res: Response): Promise<void> => {
     try {
-        const result = await pool.query('SELECT * FROM Genres');
-        res.json(result.rows);
-    } catch (err:any) {
+        const genres = await genreService.getAllGenres();
+        res.json(genres);
+    } catch (err: any) {
         res.status(500).json({ error: err.message });
     }
 };
@@ -13,12 +13,9 @@ export const getGenres = async (req: Request, res: Response): Promise<void> => {
 export const createGenre = async (req: Request, res: Response): Promise<void> => {
     const { genreName } = req.body;
     try {
-        const result = await pool.query(
-            'INSERT INTO Genres (genreName) VALUES ($1) RETURNING *',
-            [genreName]
-        );
-        res.json(result.rows[0]);
-    } catch (err:any) {
+        const newGenre = await genreService.createGenre({ genreName });
+        res.json(newGenre);
+    } catch (err: any) {
         res.status(500).json({ error: err.message });
     }
 };
@@ -27,12 +24,9 @@ export const updateGenre = async (req: Request, res: Response): Promise<void> =>
     const { id } = req.params;
     const { genreName } = req.body;
     try {
-        const result = await pool.query(
-            'UPDATE Genres SET genreName = $1 WHERE GenreID = $2 RETURNING *',
-            [genreName, id]
-        );
-        res.json(result.rows[0]);
-    } catch (err:any) {
+        const updatedGenre = await genreService.updateGenre(parseInt(id), { genreName });
+        res.json(updatedGenre);
+    } catch (err: any) {
         res.status(500).json({ error: err.message });
     }
 };
@@ -40,9 +34,9 @@ export const updateGenre = async (req: Request, res: Response): Promise<void> =>
 export const deleteGenre = async (req: Request, res: Response): Promise<void> => {
     const { id } = req.params;
     try {
-        await pool.query('DELETE FROM Genres WHERE GenreID = $1', [id]);
-        res.json({ message: 'Genre deleted successfully' });
-    } catch (err:any) {
+        const deletedGenre = await genreService.deleteGenre(parseInt(id));
+        res.json(deletedGenre ? { message: 'Genre deleted successfully' } : { error: 'Genre not found' });
+    } catch (err: any) {
         res.status(500).json({ error: err.message });
     }
 };

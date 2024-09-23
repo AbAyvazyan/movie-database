@@ -1,10 +1,10 @@
 import { Request, Response } from 'express';
-import { pool } from "../utils/dbUtils";
+import * as movieService from '../services/moviesService';
 
 export const getMovies = async (req: Request, res: Response): Promise<void> => {
     try {
-        const result = await pool.query('SELECT * FROM Movies');
-        res.json(result.rows);
+        const movies = await movieService.getMovies();
+        res.json(movies);
     } catch (err: any) {
         res.status(500).json({ error: err.message });
     }
@@ -13,11 +13,8 @@ export const getMovies = async (req: Request, res: Response): Promise<void> => {
 export const createMovie = async (req: Request, res: Response): Promise<void> => {
     const { title, releaseYear, directorId } = req.body;
     try {
-        const result = await pool.query(
-            'INSERT INTO Movies (title, releaseYear, directorId) VALUES ($1, $2, $3) RETURNING *',
-            [title, releaseYear, directorId]
-        );
-        res.json(result.rows[0]);
+        const newMovie = await movieService.createMovie({ title, releaseYear, directorId });
+        res.status(201).json(newMovie);
     } catch (err: any) {
         res.status(500).json({ error: err.message });
     }
@@ -27,11 +24,8 @@ export const updateMovie = async (req: Request, res: Response): Promise<void> =>
     const { id } = req.params;
     const { title, releaseYear, directorId } = req.body;
     try {
-        const result = await pool.query(
-            'UPDATE Movies SET title = $1, releaseYear = $2, directorId = $3 WHERE movieId = $4 RETURNING *',
-            [title, releaseYear, directorId, id]
-        );
-        res.json(result.rows[0]);
+        const updatedMovie = await movieService.updateMovie(parseInt(id), { title, releaseYear, directorId });
+        res.json(updatedMovie);
     } catch (err: any) {
         res.status(500).json({ error: err.message });
     }
@@ -40,7 +34,7 @@ export const updateMovie = async (req: Request, res: Response): Promise<void> =>
 export const deleteMovie = async (req: Request, res: Response): Promise<void> => {
     const { id } = req.params;
     try {
-        await pool.query('DELETE FROM Movies WHERE movieId = $1', [id]);
+        await movieService.deleteMovie(parseInt(id));
         res.json({ message: 'Movie deleted successfully' });
     } catch (err: any) {
         res.status(500).json({ error: err.message });
